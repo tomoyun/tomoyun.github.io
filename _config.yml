@@ -3,16 +3,16 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: Hexo
-subtitle:
-description:
-author: John Doe
+title: 进击的小码农
+subtitle: 才能は開花させるモノ
+description: 才能は開花させるモノ
+author: Sun Yun
 language: zh-Hans
 timezone:
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
-url: http://yoursite.com
+url: https://tomoyun.github.io
 root: /
 permalink: :year/:month/:day/:title/
 permalink_defaults:
