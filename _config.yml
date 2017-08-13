@@ -4,7 +4,7 @@
 
 # Site
 title: 进击的小码农
-subtitle: 才能は開花させるモノ
+subtitle: 
 description: 才能は開花させるモノ
 author: Sun Yun
 language: zh-Hans
@@ -34,7 +34,7 @@ titlecase: false # Transform title into titlecase
 external_link: true # Open external links in new tab
 filename_case: 0
 render_drafts: false
-post_asset_folder: false
+post_asset_folder: true
 relative_link: false
 future: true
 highlight:
