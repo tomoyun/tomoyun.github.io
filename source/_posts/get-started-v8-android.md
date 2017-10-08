@@ -30,7 +30,60 @@ target_os = "android"
 5. 实现JNI接口，调用V8引擎执行JS示例代码。
 
 ## CMake编译脚本修改
+为了将V8引擎集成到Android App中，需要修改CMakeLists.txt编译脚本。[Android NDK开发: CMake入门](http://cfanr.cn/2017/08/26/Android-NDK-dev-CMake-s-usage/)
 
+设置V8头文件路径
+```
+include_directories(${PROJECT_SOURCE_DIR}/src/main/cpp/include)
+include_directories(${PROJECT_SOURCE_DIR}/src/main/cpp/include/libplatform)
+```
+
+导入V8引擎静态库，链接生成项目使用的共享库.so
+```
+add_library(v8_base STATIC IMPORTED)
+set_target_properties(v8_base PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/libs/${ANDROID_ABI}/libv8_base.a)
+
+add_library(v8_libplatform STATIC IMPORTED)
+set_target_properties(v8_libplatform PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/libs/${ANDROID_ABI}/libv8_libplatform.a)
+
+add_library(v8_libbase STATIC IMPORTED)
+set_target_properties(v8_libbase PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/libs/${ANDROID_ABI}/libv8_libbase.a)
+
+add_library(v8_nosnapshot STATIC IMPORTED)
+set_target_properties(v8_nosnapshot PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/libs/${ANDROID_ABI}/libv8_nosnapshot.a)
+
+add_library(v8_libsampler STATIC IMPORTED)
+set_target_properties(v8_libsampler PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/libs/${ANDROID_ABI}/libv8_libsampler.a)
+
+target_link_libraries( # Specifies the target library.
+                       native-lib
+
+                       v8_base
+
+                       v8_libplatform
+
+                       v8_libbase
+
+                       v8_nosnapshot
+
+                       v8_libsampler
+
+                       # Links the target library to the log library
+                       # included in the NDK.
+                       ${log-lib} )
+```
+
+同时需要在gradle文件中配置CMake参数
+```
+externalNativeBuild {
+    cmake {
+        arguments "-DANDROID_STL=c++_static"
+        cFlags "-Wno-error=format-security", "-g"
+        cppFlags "-std=c++11", "-fexceptions"
+    }
+}
+```
+这样就可以成功将V8编译到我们的共享库中，剩下的就只是在JNI中用C++调用V8引擎。
 
 ## Hello V8 App
 
