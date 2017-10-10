@@ -30,7 +30,8 @@ target_os = "android"
 5. 实现JNI接口，调用V8引擎执行JS示例代码。
 
 ## CMake编译脚本修改
-为了将V8引擎集成到Android App中，需要修改CMakeLists.txt编译脚本。[Android NDK开发: CMake入门](http://cfanr.cn/2017/08/26/Android-NDK-dev-CMake-s-usage/)
+为了将V8引擎集成到Android App中，需要修改CMakeLists.txt编译脚本。
+[Android NDK开发: CMake入门](http://cfanr.cn/2017/08/26/Android-NDK-dev-CMake-s-usage/)
 
 设置V8头文件路径
 ```
@@ -86,5 +87,47 @@ externalNativeBuild {
 这样就可以成功将V8编译到我们的共享库中，剩下的就只是在JNI中用C++调用V8引擎。
 
 ## Hello V8 App
+在JNI中通过C++调用V8引擎没有什么特别，这里直接拿官方的例子实现运行JS脚本，代码如下：
+``` C++
+Platform* platform = platform::CreateDefaultPlatform();
+V8::InitializePlatform(platform);
+V8::Initialize();
+// Create a new Isolate and make it the current one.
+Isolate::CreateParams create_params;
+create_params.array_buffer_allocator =
+        v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+Isolate* isolate = Isolate::New(create_params);
+{
+    Isolate::Scope isolate_scope(isolate);
+    // Create a stack-allocated handle scope.
+    HandleScope handle_scope(isolate);
+    // Create a new context.
+    Local<Context> context = Context::New(isolate);
+    // Enter the context for compiling and running the hello world script.
+    Context::Scope context_scope(context);
+    // Create a string containing the JavaScript source code.
+    Local<String> source =
+            String::NewFromUtf8(isolate, "'Hello' + ', V8!!!'",
+                                NewStringType::kNormal).ToLocalChecked();
+    // Compile the source code.
+    Local<Script> script = Script::Compile(context, source).ToLocalChecked();
+    // Run the script to get the result.
+    Local<Value> result = script->Run(context).ToLocalChecked();
+    // Convert the result to an UTF8 string and print it.
+    String::Utf8Value utf8(result);
+    //printf("%s\n", *utf8);
+}
+// Dispose the isolate and tear down V8.
+isolate->Dispose();
+V8::Dispose();
+V8::ShutdownPlatform();
+delete platform;
+delete create_params.array_buffer_allocator;
+```
+有两个地方值得注意：
+1. 网上有不少V8的例子都是通过Isolate::GetCurrent(),这样得到的都是NULL。最新的V8不会创建默认的Isolate，需要用户自己来New。这方面请参考最新的V8官方文档
+2. 执行JS代码建议放在单独的WorkThread中执行。
 
+## 结尾
+以上我们成功将高性能的V8引擎移植到了Android App中，利用它可以执行各种各样的JS代码，来完成一些原本很难实现的功能。
 
