@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.0.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.0.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.0.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.0.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.0.4" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.0.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  
+  <meta name="keywords" content="js,Web," />
+
+
+<meta name="description" content="最近工作中需要一直和Web前端打交道，对于之前完全没有Web相关经验的我来说，真是一片空白。每天的工作中都会接触不少的新技术、新名词，无奈半吊子属性太过明显，很多知识都是一知半解，也常常会遇到自己难以解决的问题，需要麻烦同事帮忙。为了改变现状，提升自己的Web实力，搞清那剩下的一半，决定开始进行Web技术研究，总结知识的同时改变自己。Virtual Dom 就是其中最常被提起的名词之一，首先就来对">
+<meta name="keywords" content="js,Web">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Web技术研究 01 - Virtual Dom">
+<meta property="og:url" content="https://tomoyun.github.io/2017/08/13/virtual-dom-research/index.html">
+<meta property="og:site_name" content="进击的小码农">
+<meta property="og:description" content="最近工作中需要一直和Web前端打交道，对于之前完全没有Web相关经验的我来说，真是一片空白。每天的工作中都会接触不少的新技术、新名词，无奈半吊子属性太过明显，很多知识都是一知半解，也常常会遇到自己难以解决的问题，需要麻烦同事帮忙。为了改变现状，提升自己的Web实力，搞清那剩下的一半，决定开始进行Web技术研究，总结知识的同时改变自己。Virtual Dom 就是其中最常被提起的名词之一，首先就来对">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://tomoyun.github.io/2017/08/13/virtual-dom-research/diagram.png">
+<meta property="og:image" content="https://tomoyun.github.io/2017/08/13/virtual-dom-research/diagram_update.png">
+<meta property="og:image" content="https://tomoyun.github.io/2017/08/13/virtual-dom-research/phase.jpg">
+<meta property="og:image" content="https://tomoyun.github.io/2017/08/13/virtual-dom-research/diff.png">
+<meta property="og:updated_time" content="2018-02-19T09:38:01.008Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Web技术研究 01 - Virtual Dom">
+<meta name="twitter:description" content="最近工作中需要一直和Web前端打交道，对于之前完全没有Web相关经验的我来说，真是一片空白。每天的工作中都会接触不少的新技术、新名词，无奈半吊子属性太过明显，很多知识都是一知半解，也常常会遇到自己难以解决的问题，需要麻烦同事帮忙。为了改变现状，提升自己的Web实力，搞清那剩下的一半，决定开始进行Web技术研究，总结知识的同时改变自己。Virtual Dom 就是其中最常被提起的名词之一，首先就来对">
+<meta name="twitter:image" content="https://tomoyun.github.io/2017/08/13/virtual-dom-research/diagram.png">
+
+
+
+
+
+
+  <link rel="canonical" href="https://tomoyun.github.io/2017/08/13/virtual-dom-research/"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+  <title>Web技术研究 01 - Virtual Dom | 进击的小码农</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"> <div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">进击的小码农</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            <i class="menu-item-icon fa fa-fw fa-home"></i> <br />首页</a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />归档</a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            <i class="menu-item-icon fa fa-fw fa-th"></i> <br />分类</a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />标签</a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+  
+
+
+
+ </div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tomoyun.github.io/2017/08/13/virtual-dom-research/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Sun Yun">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="进击的小码农">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Web技术研究 01 - Virtual Dom</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-08-13T13:44:09+08:00">2017-08-13</time>
+            
+
+            
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Web技术研究/" itemprop="url" rel="index"><span itemprop="name">Web技术研究</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>最近工作中需要一直和Web前端打交道，对于之前完全没有Web相关经验的我来说，真是一片空白。每天的工作中都会接触不少的新技术、新名词，无奈半吊子属性太过明显，很多知识都是一知半解，也常常会遇到自己难以解决的问题，需要麻烦同事帮忙。为了改变现状，提升自己的Web实力，搞清那剩下的一半，决定开始进行Web技术研究，总结知识的同时改变自己。Virtual Dom 就是其中最常被提起的名词之一，首先就来对它进行一番研究。<br><a id="more"></a></p>
+<h2 id="源起"><a href="#源起" class="headerlink" title="源起"></a>源起</h2><p>长久以来，Web前端工作可以认为是维护状态和更新页面，其大致的流程可以理解为：<br>用户Action =&gt; 维护状态Model =&gt; 操作更新Dom =&gt; 渲染浏览器<br>用户打开网页，初始化状态Model，构建Dom，浏览器渲染页面得以展示在用户面前。而后用户操作页面内容(点击、输入等等)，触发事件回调，改变Model状态，继而操作Dom更新页面，浏览器也重新渲染，用户在电脑前看到了更新后的页面内容。如此不断循环，实现用户与网站之间的信息交互。</p>
+<p>乍一看一切都很美好。事实上在PC端，浏览器性能已足够强大，过去大部分网站似乎确实没啥问题。但是在移动端，浏览器性能还十分受限，Web App应用的复杂性却是一点不输PC端，甚至由于手势操作还要更加复杂。这一模式的问题也暴露出来，由于频繁操作Dom，导致页面性能不够用了。 这也是过去Web App以及复杂网页经常被用户说卡的主要原因。Virtual Dom正是针对这一情况所进行的优化方案。</p>
+<h3 id="Dom为什么慢"><a href="#Dom为什么慢" class="headerlink" title="Dom为什么慢"></a>Dom为什么慢</h3><p>懂一点Web前端的人都会说”Dom很慢”，”操作Dom是一件成本很高的事情”，然而进一步追问”Dom操作为什么慢”，却有一大半的人支支吾吾，说不清楚。</p>
+<p>首先，Dom是复杂的。”那为什么Dom是复杂的呢？” 真正的Dom元素非常庞大。可以调用操作Dom的Api创建一个空的Dom元素，并将其属性打印出来, 从打印结果就不难发现Dom元素远比我们想象的要庞大复杂的多。另一方面，Dom元素庞大，导致操作Dom结构的方法实现也很复杂。</p>
+<p>其次，操作Dom会触发浏览器渲染页面，重新定位元素的位置。Dom结构复杂，浏览器解析Dom结构，渲染页面的过程势必更加的复杂，更加消耗性能。频繁操作Dom，很可能导致页面多次重新渲染，那可就是杀死性能的罪魁祸首。</p>
+<h2 id="核心思想"><a href="#核心思想" class="headerlink" title="核心思想"></a>核心思想</h2><p>既然知道Dom很慢，那在Web中，什么比较快呢？js! js对象本身和页面并没有什么关系，操作js对象就好像操作一般的内存对象，处理起来更快，也更简单。<strong><em>在计算机领域，在操作慢介质之前利用快介质做缓冲，是提升性能的常用手段。</em></strong> 那么，是否可以利用较快的js对象来对Dom进行缓冲呢？Vitual Dom正是基于这个想法来实现的。</p>
+<p><strong><em>在状态Model和真实Dom之间建立一层缓冲，它是真实Dom的一种抽象表示，可以根据它来构建真实的Dom。当状态Model数据改变时，首先更新缓冲，对比前后差异，计算出最小变更，然后再将变更应用到真实Dom。这个缓冲就是Virtual Dom。</em></strong></p>
+<p>这里关键的地方有2点：</p>
+<ol>
+<li>Virtual Dom是js对真实Dom的一种表达。在每次数据发生变化时，不需要关心是数据的那部分发生了变化，只要重新整体生成一次Virtual Dom即可。这样的简单性有助于开发。</li>
+<li>Virtual Dom重新生成之后，并不会马上构建并替换Dom。新的Virtual Dom树会对比之前得到的旧Virtual Dom树，计算得到需要在Dom上进行的最小改变。最小化的Dom操作保证了页面的执行效率。</li>
+</ol>
+<hr>
+<img src="/2017/08/13/virtual-dom-research/diagram.png" title="Virtual Dom示意图">
+<p>初始渲染时，首先由状态Model生成Virtual Dom，然后由Virtual Dom构建真实Dom。</p>
+<img src="/2017/08/13/virtual-dom-research/diagram_update.png" title="更新virtual dom">
+<p>状态Modle更新时，重新生成新的Virtual Dom，与上一次得到的Virtual Dom进行对比Diff，得到需要在Dom上进行的最小化操作，然后在patch过程中应用到真实Dom上实现页面更新。</p>
+<h2 id="virtual-dom实现"><a href="#virtual-dom实现" class="headerlink" title="virtual dom实现"></a>virtual dom实现</h2><p>Vue2.x、React中的使用的Virtual Dom算法比较复杂，存在较多细节。本文并不对它们的源码进行分析，而是从原理上探讨Virtual Dom的实现。</p>
+<p>Virtual Dom的实现大致可分为一下几个阶段:<br><img src="/2017/08/13/virtual-dom-research/phase.jpg" title="Virtual Dom阶段"></p>
+<h3 id="render-创建虚拟节点"><a href="#render-创建虚拟节点" class="headerlink" title="render - 创建虚拟节点"></a>render - 创建虚拟节点</h3><p>Dom节点用js来表示非常简单，只需要记录它的节点类型、属性、子节点。<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">h</span>(<span class="params">tagName, props, ...children</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> &#123; tagName, props, children &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>假设我们有这样一颗Dom树:<br><figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">ul</span> <span class="attr">id</span>=<span class="string">'list'</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">li</span> <span class="attr">class</span>=<span class="string">'item'</span>&gt;</span>Item 1<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">li</span> <span class="attr">class</span>=<span class="string">'item'</span>&gt;</span>Item 2<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">li</span> <span class="attr">class</span>=<span class="string">'item'</span>&gt;</span>Item 3<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">ul</span>&gt;</span></span><br></pre></td></tr></table></figure></p>
+<p>可以将这颗Dom树表示为如下javascript代码:<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> vTree = h(<span class="string">'ul'</span>, &#123;<span class="attr">id</span>: <span class="string">'list'</span>&#125;, [</span><br><span class="line">    h(<span class="string">'li'</span>, &#123;<span class="attr">class</span>:<span class="string">'item'</span>&#125;, [<span class="string">'Item 1'</span>]),</span><br><span class="line">    h(<span class="string">'li'</span>, &#123;<span class="attr">class</span>:<span class="string">'item'</span>&#125;, [<span class="string">'Item 2'</span>]),</span><br><span class="line">    h(<span class="string">'li'</span>, &#123;<span class="attr">class</span>:<span class="string">'item'</span>&#125;, [<span class="string">'Item 3'</span>])</span><br><span class="line">])</span><br></pre></td></tr></table></figure></p>
+<h3 id="createElement-创建Dom节点"><a href="#createElement-创建Dom节点" class="headerlink" title="createElement - 创建Dom节点"></a>createElement - 创建Dom节点</h3><p>初始化的时候，我们需要根据Virtual Dom树构建真是的Dom树。<br>下面的createElement函数，正是用来负责完成这一转化过程：<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">createElement</span>(<span class="params">node</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(<span class="keyword">typeof</span> node === <span class="string">'string'</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">document</span>.createTextNode(node);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> el = <span class="built_in">document</span>.createElement(node.tagName);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> propName <span class="keyword">in</span> node.props) &#123; <span class="comment">// 设置节点的DOM属性</span></span><br><span class="line">        <span class="keyword">let</span> propValue = node.props[propName];</span><br><span class="line">        el.setAttribute(propName, propValue);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> children = node.children || [];</span><br><span class="line">    children.map(createElement)</span><br><span class="line">        .forEach(el.appendChild.bind(el));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> el;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>根据Virtual Node创建真实的Dom节点，并把它插入到文档中。<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> root = createElement(vTree);</span><br><span class="line"><span class="built_in">document</span>.body.appendChild(root);</span><br></pre></td></tr></table></figure></p>
+<h3 id="diff-新旧VTree差异对比"><a href="#diff-新旧VTree差异对比" class="headerlink" title="diff - 新旧VTree差异对比"></a>diff - 新旧VTree差异对比</h3><p>diff算法是Virtual Dom最核心的部分。完全比较两颗树差异的算法是一个复杂度O(n^3)的问题，代价非常高。考虑到在前端中很少会跨级的移动Dom元素，diff算法只会在同层级进行比较，不会进行跨级比较，这样算法的复杂度可以降低到O(n)。</p>
+<img src="/2017/08/13/virtual-dom-research/diff.png" title="diff 分层对比">
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">diff</span>(<span class="params">oldTree, newTree</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">let</span> index = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">let</span> patches = &#123;&#125;;</span><br><span class="line">    dfsWalk(oldTree, newTree, index, patches);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> patches;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">dfsWalk</span>(<span class="params">oldNode, newNode, index, patches</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">let</span> apply = [&#123;difference&#125; ...]</span><br><span class="line"></span><br><span class="line">    <span class="comment">//遍历子节点</span></span><br><span class="line">    diffChildren(oldNode.children, newNode.children, index, patches, apply);</span><br><span class="line"></span><br><span class="line">    patches[index] = apply;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">diffChildren</span>(<span class="params">oldChildren, newChildren, index, patches, apply</span>) </span>&#123;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> orderedSet = reorder(oldChildren, newChildren);</span><br><span class="line">    newChildren = orderedSet.children;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> oLen = oldChildren.length;</span><br><span class="line">    <span class="keyword">let</span> nLen = newChildren.length;</span><br><span class="line">    <span class="keyword">let</span> len = oLen &gt; nLen ? oLen : nLen</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">let</span> i=<span class="number">0</span>; i&lt;len; i++) &#123;</span><br><span class="line">        <span class="keyword">let</span> leftNode = oldChildren[i];</span><br><span class="line">        <span class="keyword">let</span> rightNode = newChildren[i];</span><br><span class="line">        index++;</span><br><span class="line"></span><br><span class="line">        ...</span><br><span class="line">        <span class="keyword">if</span>(leftNode) &#123;</span><br><span class="line">            dfsWalk(leftNode, rightNode, index, patches);</span><br><span class="line"></span><br><span class="line">            index += leftNode.count;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>diff算法对所有的子节点进行递归遍历，每个节点都有一个对应的编号(index)。它将每个子节点与新的树进行对比，如果存在变化，就将差异记录在patches[index]中。<br>diff得到的patches数据结构是这样的:<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> pathches = &#123;</span><br><span class="line">    <span class="number">0</span>: [&#123;<span class="attr">type</span>: REPALCE, <span class="attr">node</span>: newNode&#125;, &#123;<span class="attr">type</span>: PROPS, <span class="attr">props</span>: &#123;<span class="attr">id</span>: <span class="string">'id'</span>&#125;&#125;],</span><br><span class="line">    <span class="number">1</span>: [&#123;<span class="attr">type</span>: REORDER, <span class="attr">moves</span>: changObjs&#125;],</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>diffChildren代码中的reorder方法特别值得关注。在子节点重新排序的情况下，如果按照同层级顺序对比的话，所有的子节点都将被替换掉，这样Dom开销就很大。reorder方法就是用来处理这个问题的，实际上不需要替换节点，只用移动节点就可以完成。reorder的具体实现比较复杂，可以理解为是最小编辑距离问题，通过动态规划求解，这里不再展开。</p>
+<p>此外，列表对比中tagName是可重复的, 不能用它来进行对比，所以需要给子节点加上唯一标识key。这样在列表对比的时候，使用key进行比较，才能复用老的Dom树的节点。</p>
+<h3 id="patch-补丁更新Dom节点"><a href="#patch-补丁更新Dom节点" class="headerlink" title="patch - 补丁更新Dom节点"></a>patch - 补丁更新Dom节点</h3><p>通过diff差异对比，得到了patches对象。接下来，只要遍历patches对象，根据不同类型的差异操作对应的Dom节点。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">applyPatches</span>(<span class="params">domNode, currentPatches</span>) </span>&#123;</span><br><span class="line">    currentPatches.forEach(<span class="function"><span class="keyword">function</span> (<span class="params">currentPatch</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">switch</span> (currentPatch.type) &#123;</span><br><span class="line">            <span class="keyword">case</span> REPLACE:</span><br><span class="line">                replaceNode(domNode, currentPatch.node);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> REORDER:</span><br><span class="line">                reorderChildren(domNode, currentPatch.moves);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">            ...</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="后续"><a href="#后续" class="headerlink" title="后续"></a>后续</h2><p>上述内容还只是对Virtual Dom的一个粗略研究，Virtual Dom算法中还包括许多细节，如Hooks(注册事件)、Thunk(开发者定制diff过程)等。</p>
+<p>学习不止，记录不断，本文记录于2017年8月20日</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/js/" rel="tag"># js</a>
+          
+            <a href="/tags/Web/" rel="tag"># Web</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/10/08/get-started-v8-android/" rel="prev" title="Android App运行V8引擎入门">
+                Android App运行V8引擎入门 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar.png"
+                alt="Sun Yun" />
+            
+              <p class="site-author-name" itemprop="name">Sun Yun</p>
+              <p class="site-description motion-element" itemprop="description">才能は開花させるモノ</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">3</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">2</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">5</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#源起"><span class="nav-number">1.</span> <span class="nav-text">源起</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Dom为什么慢"><span class="nav-number">1.1.</span> <span class="nav-text">Dom为什么慢</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#核心思想"><span class="nav-number">2.</span> <span class="nav-text">核心思想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#virtual-dom实现"><span class="nav-number">3.</span> <span class="nav-text">virtual dom实现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#render-创建虚拟节点"><span class="nav-number">3.1.</span> <span class="nav-text">render - 创建虚拟节点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#createElement-创建Dom节点"><span class="nav-number">3.2.</span> <span class="nav-text">createElement - 创建Dom节点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#diff-新旧VTree差异对比"><span class="nav-number">3.3.</span> <span class="nav-text">diff - 新旧VTree差异对比</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#patch-补丁更新Dom节点"><span class="nav-number">3.4.</span> <span class="nav-text">patch - 补丁更新Dom节点</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#后续"><span class="nav-number">4.</span> <span class="nav-text">后续</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2017 &mdash; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Sun Yun</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/theme-next/hexo-theme-next">NexT.Gemini</a> v6.0.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.0.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.0.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=6.0.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=6.0.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.0.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.0.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.0.4"></script>
+
+
+
+  
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

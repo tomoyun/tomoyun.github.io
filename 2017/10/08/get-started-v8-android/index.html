@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.0.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.0.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.0.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.0.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.0.4" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.0.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  
+  <meta name="keywords" content="Android,V8,js," />
+
+
+<meta name="description" content="V8是Google开源的高性能JavaScript引擎，采用C++编写，使用于Chrome浏览器和Node.js。Android版本2.2以后的WebKit也使用了V8作为JS Engine。在Android App开发中，一般只能通过WebView来和JS代码进行交互，无法直接调用V8引擎。 这样的开发方式限制较大，且性能差。所以本文尝试在App中自己集成V8引擎来执行JS代码。">
+<meta name="keywords" content="Android,V8,js">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android App运行V8引擎入门">
+<meta property="og:url" content="https://tomoyun.github.io/2017/10/08/get-started-v8-android/index.html">
+<meta property="og:site_name" content="进击的小码农">
+<meta property="og:description" content="V8是Google开源的高性能JavaScript引擎，采用C++编写，使用于Chrome浏览器和Node.js。Android版本2.2以后的WebKit也使用了V8作为JS Engine。在Android App开发中，一般只能通过WebView来和JS代码进行交互，无法直接调用V8引擎。 这样的开发方式限制较大，且性能差。所以本文尝试在App中自己集成V8引擎来执行JS代码。">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2018-02-19T09:38:21.242Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android App运行V8引擎入门">
+<meta name="twitter:description" content="V8是Google开源的高性能JavaScript引擎，采用C++编写，使用于Chrome浏览器和Node.js。Android版本2.2以后的WebKit也使用了V8作为JS Engine。在Android App开发中，一般只能通过WebView来和JS代码进行交互，无法直接调用V8引擎。 这样的开发方式限制较大，且性能差。所以本文尝试在App中自己集成V8引擎来执行JS代码。">
+
+
+
+
+
+
+  <link rel="canonical" href="https://tomoyun.github.io/2017/10/08/get-started-v8-android/"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+  <title>Android App运行V8引擎入门 | 进击的小码农</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"> <div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">进击的小码农</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            <i class="menu-item-icon fa fa-fw fa-home"></i> <br />首页</a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />归档</a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            <i class="menu-item-icon fa fa-fw fa-th"></i> <br />分类</a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />标签</a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+  
+
+
+
+ </div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://tomoyun.github.io/2017/10/08/get-started-v8-android/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Sun Yun">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="进击的小码农">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android App运行V8引擎入门</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-08T19:32:40+08:00">2017-10-08</time>
+            
+
+            
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Android开发/" itemprop="url" rel="index"><span itemprop="name">Android开发</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>V8是Google开源的高性能JavaScript引擎，采用C++编写，使用于Chrome浏览器和Node.js。Android版本2.2以后的WebKit也使用了V8作为JS Engine。<br>在Android App开发中，一般只能通过WebView来和JS代码进行交互，无法直接调用V8引擎。 这样的开发方式限制较大，且性能差。所以本文尝试在App中自己集成V8引擎来执行JS代码。<br><a id="more"></a></p>
+<h2 id="编译V8引擎源码"><a href="#编译V8引擎源码" class="headerlink" title="编译V8引擎源码"></a>编译V8引擎源码</h2><p>官网<a href="https://github.com/v8/v8/wiki" target="_blank" rel="noopener">V8 wiki</a>页面提供了完整的流程文档，上面详细描述了源码编译的准备和过程，照着做就行。<br>对于国内的开发者来说，编译源码第一个麻烦的问题就是网络。Google网站上不去，源码下不下来，也就啥也做不了。<br>除此之外，V8最新已经使用GN代替GYP来进行编译。在mac上对V8源码进行编译后发现，编译mac平台使用的v8成功，交叉编译Android arm平台的v8失败。只要在gn args中指定Android系统，编译就会出错。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">target_os = &quot;android&quot;</span><br></pre></td></tr></table></figure></p>
+<p>查询相关资料也没有找到对应的解决办法。怀疑官方gn编译方式好像并不支持在mac上交叉编译Android平台的v8，采用老的gyp的编译方式应该可以成功。由于感人的网速和一些其他的原因，就不再继续往下折腾了，直接用<a href="https://github.com/NativeScript/android-runtime" target="_blank" rel="noopener">NativeScript</a>中已经编译好的V8。</p>
+<h2 id="Android-App集成V8"><a href="#Android-App集成V8" class="headerlink" title="Android App集成V8"></a>Android App集成V8</h2><p>在Android App中集成V8的步骤如下:</p>
+<ol>
+<li>新建Android App项目，勾选C++ support，注意最新的NDK开发采用CMake脚本编译。</li>
+<li>将NativeScript/android-runtime项目中runtime/src/main/libs文件夹拷贝至新建项目的对应位置。</li>
+<li>将NativeScript/android-runtime项目中runtime/src/main/include文件夹拷贝至新建项目的对应位置。</li>
+<li>修改CMake编辑脚本和build.gradle文件，这将在下一节中具体说明。</li>
+<li>实现JNI接口，调用V8引擎执行JS示例代码。</li>
+</ol>
+<h2 id="CMake编译脚本修改"><a href="#CMake编译脚本修改" class="headerlink" title="CMake编译脚本修改"></a>CMake编译脚本修改</h2><p>为了将V8引擎集成到Android App中，需要修改CMakeLists.txt编译脚本。<br><a href="http://cfanr.cn/2017/08/26/Android-NDK-dev-CMake-s-usage/" target="_blank" rel="noopener">Android NDK开发: CMake入门</a></p>
+<p>设置V8头文件路径<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">include_directories($&#123;PROJECT_SOURCE_DIR&#125;/src/main/cpp/include)</span><br><span class="line">include_directories($&#123;PROJECT_SOURCE_DIR&#125;/src/main/cpp/include/libplatform)</span><br></pre></td></tr></table></figure></p>
+<p>导入V8引擎静态库，链接生成项目使用的共享库.so<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">add_library(v8_base STATIC IMPORTED)</span><br><span class="line">set_target_properties(v8_base PROPERTIES IMPORTED_LOCATION $&#123;PROJECT_SOURCE_DIR&#125;/libs/$&#123;ANDROID_ABI&#125;/libv8_base.a)</span><br><span class="line"></span><br><span class="line">add_library(v8_libplatform STATIC IMPORTED)</span><br><span class="line">set_target_properties(v8_libplatform PROPERTIES IMPORTED_LOCATION $&#123;PROJECT_SOURCE_DIR&#125;/libs/$&#123;ANDROID_ABI&#125;/libv8_libplatform.a)</span><br><span class="line"></span><br><span class="line">add_library(v8_libbase STATIC IMPORTED)</span><br><span class="line">set_target_properties(v8_libbase PROPERTIES IMPORTED_LOCATION $&#123;PROJECT_SOURCE_DIR&#125;/libs/$&#123;ANDROID_ABI&#125;/libv8_libbase.a)</span><br><span class="line"></span><br><span class="line">add_library(v8_nosnapshot STATIC IMPORTED)</span><br><span class="line">set_target_properties(v8_nosnapshot PROPERTIES IMPORTED_LOCATION $&#123;PROJECT_SOURCE_DIR&#125;/libs/$&#123;ANDROID_ABI&#125;/libv8_nosnapshot.a)</span><br><span class="line"></span><br><span class="line">add_library(v8_libsampler STATIC IMPORTED)</span><br><span class="line">set_target_properties(v8_libsampler PROPERTIES IMPORTED_LOCATION $&#123;PROJECT_SOURCE_DIR&#125;/libs/$&#123;ANDROID_ABI&#125;/libv8_libsampler.a)</span><br><span class="line"></span><br><span class="line">target_link_libraries( # Specifies the target library.</span><br><span class="line">                       native-lib</span><br><span class="line"></span><br><span class="line">                       v8_base</span><br><span class="line"></span><br><span class="line">                       v8_libplatform</span><br><span class="line"></span><br><span class="line">                       v8_libbase</span><br><span class="line"></span><br><span class="line">                       v8_nosnapshot</span><br><span class="line"></span><br><span class="line">                       v8_libsampler</span><br><span class="line"></span><br><span class="line">                       # Links the target library to the log library</span><br><span class="line">                       # included in the NDK.</span><br><span class="line">                       $&#123;log-lib&#125; )</span><br></pre></td></tr></table></figure></p>
+<p>同时需要在gradle文件中配置CMake参数<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">externalNativeBuild &#123;</span><br><span class="line">    cmake &#123;</span><br><span class="line">        arguments &quot;-DANDROID_STL=c++_static&quot;</span><br><span class="line">        cFlags &quot;-Wno-error=format-security&quot;, &quot;-g&quot;</span><br><span class="line">        cppFlags &quot;-std=c++11&quot;, &quot;-fexceptions&quot;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这样就可以成功将V8编译到我们的共享库中，剩下的就只是在JNI中用C++调用V8引擎。</p>
+<h2 id="Hello-V8-App"><a href="#Hello-V8-App" class="headerlink" title="Hello V8 App"></a>Hello V8 App</h2><p>在JNI中通过C++调用V8引擎没有什么特别，这里直接拿官方的例子实现运行JS脚本，代码如下：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">Platform* platform = platform::CreateDefaultPlatform();</span><br><span class="line">V8::InitializePlatform(platform);</span><br><span class="line">V8::Initialize();</span><br><span class="line"><span class="comment">// Create a new Isolate and make it the current one.</span></span><br><span class="line">Isolate::CreateParams create_params;</span><br><span class="line">create_params.array_buffer_allocator =</span><br><span class="line">        v8::ArrayBuffer::Allocator::NewDefaultAllocator();</span><br><span class="line">Isolate* isolate = Isolate::New(create_params);</span><br><span class="line">&#123;</span><br><span class="line">    Isolate::<span class="function">Scope <span class="title">isolate_scope</span><span class="params">(isolate)</span></span>;</span><br><span class="line">    <span class="comment">// Create a stack-allocated handle scope.</span></span><br><span class="line">    <span class="function">HandleScope <span class="title">handle_scope</span><span class="params">(isolate)</span></span>;</span><br><span class="line">    <span class="comment">// Create a new context.</span></span><br><span class="line">    Local&lt;Context&gt; context = Context::New(isolate);</span><br><span class="line">    <span class="comment">// Enter the context for compiling and running the hello world script.</span></span><br><span class="line">    Context::<span class="function">Scope <span class="title">context_scope</span><span class="params">(context)</span></span>;</span><br><span class="line">    <span class="comment">// Create a string containing the JavaScript source code.</span></span><br><span class="line">    Local&lt;String&gt; source =</span><br><span class="line">            String::NewFromUtf8(isolate, <span class="string">"'Hello' + ', V8!!!'"</span>,</span><br><span class="line">                                NewStringType::kNormal).ToLocalChecked();</span><br><span class="line">    <span class="comment">// Compile the source code.</span></span><br><span class="line">    Local&lt;Script&gt; script = Script::Compile(context, source).ToLocalChecked();</span><br><span class="line">    <span class="comment">// Run the script to get the result.</span></span><br><span class="line">    Local&lt;Value&gt; result = script-&gt;Run(context).ToLocalChecked();</span><br><span class="line">    <span class="comment">// Convert the result to an UTF8 string and print it.</span></span><br><span class="line">    String::<span class="function">Utf8Value <span class="title">utf8</span><span class="params">(result)</span></span>;</span><br><span class="line">    <span class="comment">//printf("%s\n", *utf8);</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// Dispose the isolate and tear down V8.</span></span><br><span class="line">isolate-&gt;Dispose();</span><br><span class="line">V8::Dispose();</span><br><span class="line">V8::ShutdownPlatform();</span><br><span class="line"><span class="keyword">delete</span> platform;</span><br><span class="line"><span class="keyword">delete</span> create_params.array_buffer_allocator;</span><br></pre></td></tr></table></figure></p>
+<p>有两个地方值得注意：</p>
+<ol>
+<li>网上有不少V8的例子都是通过Isolate::GetCurrent(),这样得到的都是NULL。最新的V8不会创建默认的Isolate，需要用户自己来New。这方面请参考最新的V8官方文档</li>
+<li>执行JS代码建议放在单独的WorkThread中执行。</li>
+</ol>
+<h2 id="结尾"><a href="#结尾" class="headerlink" title="结尾"></a>结尾</h2><p>以上我们成功将高性能的V8引擎移植到了Android App中，利用它可以执行各种各样的JS代码，来完成一些原本很难实现的功能。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Android/" rel="tag"># Android</a>
+          
+            <a href="/tags/V8/" rel="tag"># V8</a>
+          
+            <a href="/tags/js/" rel="tag"># js</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/08/13/virtual-dom-research/" rel="next" title="Web技术研究 01 - Virtual Dom">
+                <i class="fa fa-chevron-left"></i> Web技术研究 01 - Virtual Dom
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/02/19/android-connect-specific-wifi/" rel="prev" title="Android连接指定的WiFi热点">
+                Android连接指定的WiFi热点 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar.png"
+                alt="Sun Yun" />
+            
+              <p class="site-author-name" itemprop="name">Sun Yun</p>
+              <p class="site-description motion-element" itemprop="description">才能は開花させるモノ</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">3</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">2</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">5</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#编译V8引擎源码"><span class="nav-number">1.</span> <span class="nav-text">编译V8引擎源码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Android-App集成V8"><span class="nav-number">2.</span> <span class="nav-text">Android App集成V8</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CMake编译脚本修改"><span class="nav-number">3.</span> <span class="nav-text">CMake编译脚本修改</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hello-V8-App"><span class="nav-number">4.</span> <span class="nav-text">Hello V8 App</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结尾"><span class="nav-number">5.</span> <span class="nav-text">结尾</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2017 &mdash; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Sun Yun</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/theme-next/hexo-theme-next">NexT.Gemini</a> v6.0.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.0.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.0.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=6.0.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=6.0.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.0.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.0.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.0.4"></script>
+
+
+
+  
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
